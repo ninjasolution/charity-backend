@@ -10,7 +10,7 @@ module.exports = (connection, autoIncrement) => {
     },
     user: {
       type: Number,
-      ref: "UserRole"
+      ref: "User"
     },
     content: {
       type: String

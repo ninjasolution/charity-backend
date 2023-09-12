@@ -21,7 +21,7 @@ const upload = multer({ storage: storage });
 exports.upload = upload.single('avatar');
 exports.fileHandle = (req, res) => {
     User.findOne({_id: req.idUser})
-    .populate('roles')
+    .populate('role')
     .populate('transactions')
     .exec(async (err, user) => {
 

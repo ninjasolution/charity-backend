@@ -19,7 +19,6 @@ autoIncrement.initialize(db.connection);
 
 db.user = require("./user.model")(db.connection, autoIncrement);
 db.role = require("./role.model")(db.connection, autoIncrement);
-db.userRole = require("./userRole.model")(db.connection, autoIncrement);
 db.token = require("./token.model")(db.connection, autoIncrement);
 db.donation = require("./donation.model")(db.connection, autoIncrement);
 db.feedback = require("./feedback.model")(db.connection, autoIncrement);

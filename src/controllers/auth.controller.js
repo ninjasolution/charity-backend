@@ -1,7 +1,6 @@
 const settings = require("../config/settings");
 const db = require("../models");
 const User = db.user;
-const UserRole = db.userRole;
 const Role = db.role;
 const Token = db.token;
 const twilio = require('twilio');
@@ -10,10 +9,8 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const axios = require('axios').default;
 
 const service = require("../service");
-const { requestBotAPI } = require("../helpers");
 const { RES_MSG_DATA_NOT_FOUND, RES_STATUS_FAIL } = require("../config");
 
 exports.signup = async (req, res) => {
@@ -36,19 +33,12 @@ exports.signup = async (req, res) => {
       return res.status(404).send({ message: RES_MSG_DATA_NOT_FOUND, status: RES_STATUS_FAIL });
     }
 
-    let userRole = new UserRole({
-      user: user._id,
-      role: role._id
-    })
-    userRole.save(async (err, userRole) => {
+    user.role = role._id;
+    user.save(async (err, user) => {
       if (err) {
         return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
       }
-
-      user.roles.push(userRole._id);
-      await user.save();
-
-      return res.send(userRole);
+      return res.send(user);
     });
   }
   );
@@ -59,7 +49,7 @@ exports.signin = (req, res) => {
   User.findOne({
     email: req.body.email
   })
-    .populate("roles", "-__v")
+    .populate("role", "-__v")
     .exec((err, user) => {
       if (err) {
         res.status(200).send({ message: err, status: RES_STATUS_FAIL });
@@ -95,7 +85,7 @@ exports.signin = (req, res) => {
           changePasswordAt: user.changePasswordAt,
           passwordtoken: user.resetPasswordToken,
           passwordtokenexp: user.resetPasswordExpires,
-          roles: user.roles,
+          role: user.role
         }
       });
     });
@@ -125,7 +115,7 @@ exports.verifyEmail = async (req, res) => {
               changePasswordAt: user.changePasswordAt,
               passwordtoken: user.resetPasswordToken,
               passwordtokenexp: user.resetPasswordExpires,
-              roles: user.roles,
+              role: user.role,
             }
           });
         }
@@ -158,7 +148,7 @@ exports.verifyEmail = async (req, res) => {
             changePasswordAt: user.changePasswordAt,
             passwordtoken: user.resetPasswordToken,
             passwordtokenexp: user.resetPasswordExpires,
-            roles: user.roles,
+            role: user.role,
           }
         });
       })
@@ -235,7 +225,7 @@ exports.reset = async (req, res) => {
   User.findOne({
     _id: req.idUser
   })
-    .populate("roles", "-__v")
+    .populate("role", "-__v")
     .exec((err, user) => {
       if (err) {
         res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
@@ -339,7 +329,7 @@ exports.requestPhoneVerify = (req, res) => {
   User.findOne({
     _id: req.idUser
   })
-    .populate("roles", "-__v")
+    .populate("role", "-__v")
     .exec(async (err, user) => {
       if (err) {
         res.status(200).send({ message: err, status: RES_STATUS_FAIL });

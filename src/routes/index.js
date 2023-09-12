@@ -26,9 +26,6 @@ router.get("/user/check-verification", middlewares.authJwt.verifyToken, userCont
 router.get("/user/:id([0-9]+)", [middlewares.authJwt.verifyToken, middlewares.authJwt.isAdmin], userController.getUser);
 router.put("/user", middlewares.authJwt.verifyToken, userController.update);
 router.delete("/user/:id([0-9]+)", [middlewares.authJwt.verifyToken, middlewares.authJwt.isAdmin], userController.delete);
-router.get("/dashboard", [middlewares.authJwt.verifyToken], userController.dashboard);
-router.get("/payment-info", [middlewares.authJwt.verifyToken], userController.getpaymentinfo);
-router.post("/withdraw", [middlewares.authJwt.verifyToken], userController.withdraw);
 
 //avatar
 router.post("/avatar", middlewares.authJwt.verifyToken, fileController.upload, fileController.fileHandle);

@@ -6,7 +6,7 @@ module.exports = (connection, autoIncrement) => {
     address: String,
     user: {
       type: Number,
-      ref: "UserRole"
+      ref: "User"
     },
     donation: {
       type: Number,

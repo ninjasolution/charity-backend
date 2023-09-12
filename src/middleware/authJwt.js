@@ -29,19 +29,17 @@ const isAdmin = (req, res, next) => {
 
     Role.find(
       {
-        _id: { $in: user.roles }
+        _id: user.role
       },
-      (err, roles) => {
+      (err, role) => {
         if (err) {
           res.status(200).send({ message: err });
           return;
         }
 
-        for (let i = 0; i < roles.length; i++) {
-          if (roles[i].name === "admin") {
-            next();
-            return;
-          }
+        if (role.name === "admin") {
+          next();
+          return;
         }
 
         res.status(200).send({ message: "Require Admin Role!", status: "errors" });
@@ -60,19 +58,17 @@ const isUser = (req, res, next) => {
 
     Role.find(
       {
-        _id: { $in: user.roles }
+        _id: user.role
       },
-      (err, roles) => {
+      (err, role) => {
         if (err) {
           res.status(200).send({ message: err, status: "errors" });
           return;
         }
 
-        for (let i = 0; i < roles.length; i++) {
-          if (roles[i].name === "user") {
-            next();
-            return;
-          }
+        if (role.name === "user") {
+          next();
+          return;
         }
 
         res.status(200).send({ message: "Require user Role!", status: "errors" });
