@@ -16,9 +16,11 @@ module.exports = (connection, autoIncrement) => {
       type: Number,
       ref: "Organization"
     },
-    totalAmount: Number,
-    paymentMethod: String,
-    authorizationID: String,
+    transactionId: String,
+    amount: Number,
+    currency: String,
+    status: String,
+    method: String
 
   });
 

@@ -11,4 +11,7 @@ module.exports = {
 	RES_MSG_DATA_FOUND: "Data is found",
 	RES_MSG_SUCESS: "Success",
 	RES_MSG_FAIL: "Failure",
+    DONATION_STATUS_PENDING: 0,
+    DONATION_STATUS_APPROVED: 1,
+    DONATION_STATUS_REJECTED: 2,
 }

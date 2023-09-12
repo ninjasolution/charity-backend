@@ -1,18 +1,23 @@
 const mongoose = require("mongoose");
+const { DONATION_STATUS_PENDING } = require("../config");
 
 module.exports = (connection, autoIncrement) => {
 
   const DonationSchema = new mongoose.Schema({
-    amount: Number,
+    title: String,
+    description: {
+      type: String,
+    },
+    totalAmount: Number,
     paymentMethod: {
       type: String,
       enum: ["Stripe", "Paypal", "Crypto"]
     },
-    donation: {
+    status: {
       type: Number,
-      ref: "Donation"
+      default: DONATION_STATUS_PENDING
     },
-    user: {
+    createdBy: {
       type: Number,
       ref: "User"
     }

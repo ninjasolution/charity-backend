@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 module.exports = (connection, autoIncrement) => {
 
   const FeedbackSchema = new mongoose.Schema({
-    name: String,
+    topic: String,
     donation: {
       type: Number,
       ref: "Donation"
