@@ -69,7 +69,7 @@ exports.signin = (req, res) => {
         return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
-      var token = jwt.sign({ id: user._id }, settings.secret, {
+      var token = jwt.sign({ id: user._id }, process.env.SESSION_SECRET, {
         expiresIn: 86400 // 24 hours
       });
 
@@ -100,7 +100,7 @@ exports.verifyEmail = async (req, res) => {
       .exec(async (err, user) => {
         if (!user) return res.status(200).send({ message: "Not exist user", status: RES_STATUS_FAIL });
         if (user.emailVerified) {
-          var token = jwt.sign({ id: user._id }, settings.secret, {
+          var token = jwt.sign({ id: user._id }, process.env.SESSION_SECRET, {
             expiresIn: 86400 // 24 hours
           });
           return res.status(200).send({
@@ -132,7 +132,7 @@ exports.verifyEmail = async (req, res) => {
         await User.updateOne({ _id: user._id }, { emailVerified: true });
         await Token.deleteMany({ _id: { $in: tokens.map(t => t._id) } });
 
-        var token = jwt.sign({ id: user._id }, settings.secret, {
+        var token = jwt.sign({ id: user._id }, process.env.SESSION_SECRET, {
           expiresIn: 86400 // 24 hours
         });
 
@@ -161,7 +161,7 @@ exports.verifyEmail = async (req, res) => {
 
 exports.verifyPhoneNumber = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.idUser });
+    const user = await User.findOne({ _id: req.userId });
     if (!user) return res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
     if (user.phoneVerified) return res.send({ message: "phone verified sucessfully", status: "success" });
 
@@ -223,7 +223,7 @@ exports.forgot = async (req, res, next) => {
 
 exports.reset = async (req, res) => {
   User.findOne({
-    _id: req.idUser
+    _id: req.userId
   })
     .populate("role", "-__v")
     .exec((err, user) => {
@@ -260,7 +260,7 @@ exports.reset = async (req, res) => {
 
 exports.changePassword = (req, res) => {
   User.findOne({
-    _id: req.idUser
+    _id: req.userId
   })
     .exec((err, user) => {
       if (err) {
@@ -300,7 +300,7 @@ exports.changePassword = (req, res) => {
 
 exports.requestEmailVerify = (req, res) => {
   User.findOne({
-    _id: req.idUser
+    _id: req.userId
   })
     .exec(async (err, user) => {
       if (err) {
@@ -327,7 +327,7 @@ exports.requestEmailVerify = (req, res) => {
 
 exports.requestPhoneVerify = (req, res) => {
   User.findOne({
-    _id: req.idUser
+    _id: req.userId
   })
     .populate("role", "-__v")
     .exec(async (err, user) => {

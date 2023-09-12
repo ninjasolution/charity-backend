@@ -14,7 +14,7 @@ const options = {
 
 db.mongoose = mongoose;
 // db.connection = db.mongoose.createConnection(`mongodb://uwpvf6mq9liyquanmh7a:BrGqcfDH5Xur6cm0Jjp@bzcp33vwyf3xkaobaqux-mongodb.services.clever-cloud.com:2088/bzcp33vwyf3xkaobaqux`)
-db.connection = db.mongoose.createConnection(`mongodb://127.0.0.1:27017/charity`)
+db.connection = db.mongoose.createConnection(`mongodb://127.0.0.1:27017/charity`, { useNewUrlParser: true, useUnifiedTopology: true })
 autoIncrement.initialize(db.connection);
 
 db.user = require("./user.model")(db.connection, autoIncrement);

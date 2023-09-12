@@ -85,7 +85,7 @@ exports.setRole = (req, res) => {
 };
 
 exports.update = (req, res) => {
-  User.findOne({ _id: req.idUser })
+  User.findOne({ _id: req.userId })
     .populate('role')
     .exec(async (err, user) => {
 
@@ -119,7 +119,7 @@ exports.delete = (req, res) => {
 
 exports.checkVerification = (req, res) => {
 
-  User.findOne({ _id: req.idUser })
+  User.findOne({ _id: req.userId })
     .exec(async (err, user) => {
 
       if (err) {

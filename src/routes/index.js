@@ -1,14 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const middlewares = require("../middleware");
-const stripPaymentController = require("../controllers/StripPayment.controller");
-const PayPalPaymentController = require("../controllers/PaypalPayment.controller");
 const authController = require("../controllers/auth.controller");
 const userController = require("../controllers/user.controller");
-const cryptoPaymentController = require("../controllers/cryptoPayment.controller");
-const transactionController = require("../controllers/transactionPayment.controller");
+const paymentController = require("../controllers/payment.controller");
 const fileController = require("../controllers/file.controller");
 const adminController = require("../controllers/admin.controller");
+const donationController = require("../controllers/donation.controller");
+const feedbackController = require("../controllers/feedback.controller");
 
 router.post("/auth/signup", [middlewares.verifySignUp.checkRolesExisted], authController.signup)
 router.post("/auth/signin", authController.signin)
@@ -35,16 +34,22 @@ router.delete("/avatar/:fileName",middlewares.authJwt.isAdmin, fileController.de
 //Transaction
 router.get("/transaction", middlewares.authJwt.verifyToken, transactionController.index)
 
-//Crypto Payment
-router.post("/crypto/payment", middlewares.authJwt.verifyToken, cryptoPaymentController.payment)
+//Donation
+router.get("/donation", middlewares.authJwt.verifyToken, donationController.findAll)
+router.get("/donation/:id",middlewares.authJwt.verifyToken, donationController.findOne);
+router.post("/donation", middlewares.authJwt.verifyToken, donationController.create)
+router.put("/donation/:id", middlewares.authJwt.verifyToken, donationController.update)
+router.delete("/donation/:id",middlewares.authJwt.isAdmin, donationController.delete);
+router.put("/donation/approve/:id", middlewares.authJwt.isAdmin, donationController.approve);
 
-//Strip Payment
-router.get("/stripe", middlewares.authJwt.verifyToken, stripPaymentController.index);
-router.post("/stripe/payment", middlewares.authJwt.verifyToken, stripPaymentController.payment);
+//Feedback
+router.get("/feedback", middlewares.authJwt.verifyToken, feedbackController.findAll)
+router.post("/feedback", middlewares.authJwt.verifyToken, feedbackController.create)
 
-// Paypal Payment
-router.post("/paypal/payment", middlewares.authJwt.verifyToken, PayPalPaymentController.payment);
-
+//Payment
+router.post("/payment/stripe", middlewares.authJwt.verifyToken, paymentController.payWithStripe);
+router.post("/payment/paypal", middlewares.authJwt.verifyToken, paymentController.payWithPaypal);
+router.post("/payment/cofirm/stripe", middlewares.authJwt.verifyToken, paymentController.confirmPaypalPayment);
 
 router.get("/admin/db/drop", [middlewares.authJwt.verifyToken, middlewares.authJwt.isAdmin], adminController.drop)
 

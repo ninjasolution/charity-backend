@@ -2,10 +2,8 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const bcrypt = require("bcryptjs");
-const service = require("./src/service")
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const settings = require("./src/config/settings")
 
 require('dotenv').config();
 
@@ -16,7 +14,7 @@ app.use(express.static(__dirname + 'public')); //Serves resources from public fo
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
-  secret: settings.secret,
+  secret: process.env.SESSION_SECRET,
   resave: true,
   saveUninitialized: true,
   cookie: { maxAge: 1000 * 60 * 60 * 24 }
@@ -25,11 +23,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 var corsOptions = {
-  origin: "https://fintecapital.io"
+  origin: process.env.CORS_ORIGIN || "https://fintecapital.io"
 };
 
 app.use(cors(corsOptions));
 
+app.use('/api', indexRouter);
+app.get("/", (req, res) => {
+  return res.send("Welcome to Mr-Tradly API");
+});
 
 app.use(function (err, req, res, next) {
   res.locals.message = err.message;
@@ -56,10 +58,7 @@ app.use(function (req, res, next) {
 });
 app.set("view engine", "ejs")
 
-app.get("/", (req, res) => {
-  return res.send("Welcome to Mr-Tradly API");
-});
-app.use('/api', indexRouter);
+
 
 
 
@@ -100,7 +99,7 @@ function initial() {
           let user = new User({
             username: "adminuser",
             email: "admin@gmail.com",
-            password: bcrypt.hashSync("admin", 8),
+            password: bcrypt.hash("admin", 8),
             firstName: "Mykhailo",
             lastName: "Savchuk",
             emailVerified: true,

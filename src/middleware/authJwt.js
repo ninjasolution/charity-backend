@@ -11,17 +11,17 @@ const verifyToken = (req, res, next) => {
     return res.status(200).send({ message: "No token provided!", status: "errors" });
   }
 
-  jwt.verify(token, settings.secret, (err, decoded) => {
+  jwt.verify(token, process.env.SESSION_SECRET, (err, decoded) => {
     if (err) {
       return res.status(200).send({ message: "Unauthorized!", status: "errors" });
     }
-    req.idUser = decoded.id;
+    req.userId = decoded.id;
     next();
   });
 };
 
 const isAdmin = (req, res, next) => {
-  User.findById(req.idUser).exec((err, user) => {
+  User.findById(req.userId).exec((err, user) => {
     if (err) {
       res.status(200).send({ message: err, status: "errors" });
       return;
@@ -50,7 +50,7 @@ const isAdmin = (req, res, next) => {
 };
 
 const isUser = (req, res, next) => {
-  User.findById(req.idUser).exec((err, user) => {
+  User.findById(req.userId).exec((err, user) => {
     if (err) {
       res.status(200).send({ message: err, status: "errors" });
       return;

@@ -1,7 +1,7 @@
 const stripe = require('stripe')(process.env.ADMIN_STRIPE_SECRET_KEY);
 const paypal = require('paypal-rest-sdk');
 const db = require("../models");
-const Payment = payment;
+const Payment = db.payment;
 
 paypal.configure({
   'mode': 'sandbox', //sandbox or live
@@ -60,8 +60,8 @@ exports.payWithPaypal = async (req, res) => {
     if (error) {
       res.status(500).json({ error: error.message });
     } else {
-      for(let i = 0; i < payment.links.length; i++){
-        if(payment.links[i].rel === 'approval_url'){
+      for (let i = 0; i < payment.links.length; i++) {
+        if (payment.links[i].rel === 'approval_url') {
           res.status(200).json({ approval_url: payment.links[i].href });
         }
       }
