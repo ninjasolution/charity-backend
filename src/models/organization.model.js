@@ -4,12 +4,8 @@ module.exports = (connection, autoIncrement) => {
 
   const OrganizationSchema = new mongoose.Schema({
     name: String,
-    users: [
-      {
-        type: Number,
-        ref: "User"
-      }
-    ]
+    description: String,
+    
   });
 
   OrganizationSchema.plugin(autoIncrement.plugin, "Organization")
