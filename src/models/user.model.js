@@ -51,12 +51,10 @@ module.exports = (connection, autoIncrement) => {
       type: Date,
       default: Date.now
     },
-    roles: [
-      {
-        type: Number,
-        ref: "UserRole"
-      }
-    ],
+    role: {
+      type: Number,
+      ref: "Role"
+    },
     tokens: [
       {
         type: Number,
@@ -64,13 +62,13 @@ module.exports = (connection, autoIncrement) => {
       }
     ]
   })
-  
+
   UserSchema.plugin(timestamps)
   UserSchema.plugin(autoIncrement.plugin, "User")
-  
+
   const User = connection.model(
     "User",
-    UserSchema  
+    UserSchema
   );
 
   return User;
