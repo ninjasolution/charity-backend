@@ -4,12 +4,6 @@ module.exports = (connection, autoIncrement) => {
 
   const RoleSchema = new mongoose.Schema({
     name: String,
-    users: [
-      {
-        type: Number,
-        ref: "User"
-      }
-    ]
   });
 
   RoleSchema.plugin(autoIncrement.plugin, "Role")
@@ -17,6 +11,6 @@ module.exports = (connection, autoIncrement) => {
     "Role",
     RoleSchema
   );
-  
+
   return Role;
 }

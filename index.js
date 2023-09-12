@@ -77,49 +77,36 @@ db.connection.on("error", (err) => {
 })
 
 
-
 function initial() {
-  Role.estimatedDocumentCount((err, count) => {
+  Role.estimatedDocumentCount(async (err, count) => {
     if (!err && count === 0) {
-      new Role({
-        name: "user"
-      }).save(err => {
-        if (err) {
-          console.log("error", err);
-        }
-      });
 
-      new Role({
-        name: "admin"
-      }).save(err => {
-        if (err) {
-          console.log("error", err);
+      for (let i = 0; i < db.ROLES.length; i++) {
+        try {
+          let role = new Role({
+            name: db.ROLES[i]
+          })
+          await role.save();
+        } catch (err) {
+          console.log(err)
         }
+      }
 
-        const adminUser = new User({
-          username: 'Adminministrator',
-          email: 'admin@gmail.com',
-          password: bcrypt.hashSync("admin", 8),
-          phoneVerified: true,
-          emailVerified: true,
-          enabled: true
+      Role.findOne({ name: "admin" })
+        .exec(async (err, role) => {
+          if (err) return;
+          if (!role) return;
+
+          let user = new User({
+            username: "adminuser",
+            email: "admin@gmail.com",
+            password: bcrypt.hashSync("admin", 8),
+            firstName: "Mykhailo",
+            lastName: "Savchuk",
+            emailVerified: true,
+          })
+          await user.save();
         })
-        Role.find({ name: 'admin' }, (err, roles) => {
-          if (err) {
-            return;
-          }
-
-          adminUser.roles = roles.map(role => role._id);
-          adminUser.save(err => {
-            if (err) {
-              return console.log(err);
-            }
-
-            console.log("Database is initialized successfuly!")
-          });
-        });
-
-      });
     }
   });
 }

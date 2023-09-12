@@ -3,14 +3,18 @@ const mongoose = require("mongoose");
 module.exports = (connection, autoIncrement) => {
 
   const DonationSchema = new mongoose.Schema({
-    name: String,
-    individual: {
-      type: Number,
-      ref: "Individual"
+    amount: Number,
+    paymentMethod: {
+      type: String,
+      enum: ["Stripe", "Paypal", "Crypto"]
     },
-    organization: {
+    donation: {
       type: Number,
-      ref: "Organization"
+      ref: "Donation"
+    },
+    user: {
+      type: Number,
+      ref: "User"
     }
   });
 

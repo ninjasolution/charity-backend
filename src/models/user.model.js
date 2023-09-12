@@ -10,6 +10,16 @@ module.exports = (connection, autoIncrement) => {
       min: 3,
       max: 25
     },
+    firstName: {
+      type: String,
+      min: 3,
+      max: 25
+    },
+    lastName: {
+      type: String,
+      min: 3,
+      max: 25
+    },
     email: {
       type: String,
       unique: true
@@ -34,60 +44,6 @@ module.exports = (connection, autoIncrement) => {
       type: String,
       default: "avatar.png"
     },
-    city: {
-      type: String,
-      default: ""
-    },
-    country: {
-      type: Object,
-      default: {"value": "CH", "label": "Switzerland"}
-    },
-    zipCode: {
-      type: String,
-      default: ""
-    },
-    withdrawAddress: {
-      type: String,
-      length: 42,
-      default: "",
-    },
-    evmPrivateKey: {
-      type: String,
-    },
-    evmAddress: {
-      type: String,
-      length: 42
-    },
-    btcPrivateKey: {
-      type: String,
-    },
-    btcAddress: {
-      type: String,
-    },
-    apiKey: {
-      type: String,
-      default: ""
-    },
-    apiSecret: {
-      type: String,
-      default: ""
-    },
-    authCode: {
-      type: String,
-      default: ""
-    },
-    enabled: {
-      type: Number,
-      default: false
-    },
-    profit: {
-      type: Number,
-      default: 0
-    },
-    orderCents: {
-      type: Number,
-      default: 0
-    },
     password: String,
     resetPasswordToken: String,
     resetPasswordExpires: Date,
@@ -95,24 +51,10 @@ module.exports = (connection, autoIncrement) => {
       type: Date,
       default: Date.now
     },
-    referralCode: {
-      type: String,
-      default: ""
-    },
-    leaderCode: {
-      type: String,
-      default: ""
-    },
     roles: [
       {
         type: Number,
-        ref: "Role"
-      }
-    ],
-    transactions: [
-      {
-        type: Number,
-        ref: "Transaction"
+        ref: "UserRole"
       }
     ],
     tokens: [

@@ -8,17 +8,9 @@ module.exports = (connection, autoIncrement) => {
       type: Number,
       ref: "Donation"
     },
-    individual: {
-      type: Number,
-      ref: "Individual"
-    },
-    organization: {
-      type: Number,
-      ref: "Organization"
-    },
     user: {
       type: Number,
-      ref: "User"
+      ref: "UserRole"
     },
     content: {
       type: String

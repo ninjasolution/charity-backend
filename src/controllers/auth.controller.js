@@ -1,6 +1,7 @@
 const settings = require("../config/settings");
 const db = require("../models");
 const User = db.user;
+const UserRole = db.userRole;
 const Role = db.role;
 const Token = db.token;
 const twilio = require('twilio');
@@ -13,88 +14,45 @@ const axios = require('axios').default;
 
 const service = require("../service");
 const { requestBotAPI } = require("../helpers");
+const { RES_MSG_DATA_NOT_FOUND, RES_STATUS_FAIL } = require("../config");
 
 exports.signup = async (req, res) => {
 
 
-  const user = new User({
+  let user = new User({
     username: req.body.username,
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, 8),
   });
 
-  if (req.body.roles) {
-    Role.find({ name: { $in: req.body.roles } }, (err, roles) => {
-      if (err) {
-        return res.status(200).send({ message: err, status: "errors" });
-      }
+  user = await user.save();
 
-      user.roles = roles.map(role => role._id);
-      user.save(err => {
-        if (err) {
-          return res.status(200).send({ message: err, status: "errors" });
-        }
-
-        res.send(user);
-      });
+  Role.findOne({ name: req.body.role }, (err, role) => {
+    if (err) {
+      return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
     }
-    );
-  } else {
-    Role.findOne({ name: "user" }, (err, role) => {
-      if (err) {
-        return res.status(200).send({ message: "Role doesn't exist.", status: "errors" });
 
+    if (!role) {
+      return res.status(404).send({ message: RES_MSG_DATA_NOT_FOUND, status: RES_STATUS_FAIL });
+    }
+
+    let userRole = new UserRole({
+      user: user._id,
+      role: role._id
+    })
+    userRole.save(async (err, userRole) => {
+      if (err) {
+        return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
       }
 
-      user.roles = [role._id];
-      user.save(async (err, nUser) => {
-        if (err) {
-          return res.status(200).send({ message: `E11000 duplicate key error collection: users index: email_1 dup key: { email: ${req.body.email}}`, status: "errors" });
+      user.roles.push(userRole._id);
+      await user.save();
 
-        }
-
-        let token = await new Token({
-          user: nUser._id,
-          type: "Email",
-          token: crypto.randomBytes(32).toString("hex"),
-        }).save();
-
-        const message = `<p>You requested for email verification, kindly use this <a href="${process.env.BASE_URL}/#/auth/verify/${user._id}/${token.token}" target="_blank">link</a> to verify your email address</p>`
-        await sendEmail(nUser.email, "Verify Email", message);
-
-        var response;
-        try {
-          var data = JSON.stringify({
-            "idUser": 2250,
-          });
-          response = await requestBotAPI("post", "user", data)
-
-        } catch (err) {
-          return res.status(200).send({ message: "Bot API doesn't work", status: "errors" });
-        }
-
-        // nUser.authCode = response.data.authCode;
-        nUser.authCode = "1ee9394573062b6dbe275d9c570d52f4";
-
-        nUser.save(async (err, rUser) => {
-          if (err) {
-            res.status(200).send({ message: err, status: "errors" });
-            return;
-          }
-
-          var token = jwt.sign({ id: rUser._id }, settings.secret, {
-            expiresIn: 86400 // 24 hours
-          });
-
-          return res.status(200).send({
-            message: "success",
-            token,
-            status: "success",
-          });
-        });
-      });
+      return res.send(userRole);
     });
   }
+  );
+
 };
 
 exports.signin = (req, res) => {
@@ -104,12 +62,12 @@ exports.signin = (req, res) => {
     .populate("roles", "-__v")
     .exec((err, user) => {
       if (err) {
-        res.status(200).send({ message: err, status: "errors" });
+        res.status(200).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Incorrect id or password", status: "errors" });
+        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
       var passwordIsValid = bcrypt.compareSync(
@@ -118,7 +76,7 @@ exports.signin = (req, res) => {
       );
 
       if (!passwordIsValid) {
-        return res.status(200).send({ message: "Incorrect id or password", status: "errors" });
+        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
       var token = jwt.sign({ id: user._id }, settings.secret, {
@@ -150,7 +108,7 @@ exports.verifyEmail = async (req, res) => {
     })
       .populate("tokens", "-__v")
       .exec(async (err, user) => {
-        if (!user) return res.status(200).send({ message: "Not exist user", status: "errors" });
+        if (!user) return res.status(200).send({ message: "Not exist user", status: RES_STATUS_FAIL });
         if (user.emailVerified) {
           var token = jwt.sign({ id: user._id }, settings.secret, {
             expiresIn: 86400 // 24 hours
@@ -176,9 +134,9 @@ exports.verifyEmail = async (req, res) => {
           user: req.params.id,
           type: "Email",
         });
-        if (tokens.length === 0) return res.status(200).send({ message: "Token doesn't exist", status: "errors" });
+        if (tokens.length === 0) return res.status(200).send({ message: "Token doesn't exist", status: RES_STATUS_FAIL });
         if (!tokens.map(t => t.token).includes(req.params.token)) {
-          return res.status(200).send({ message: "Incorrect token", status: "errors" });
+          return res.status(200).send({ message: "Incorrect token", status: RES_STATUS_FAIL });
         }
 
         await User.updateOne({ _id: user._id }, { emailVerified: true });
@@ -207,14 +165,14 @@ exports.verifyEmail = async (req, res) => {
 
 
   } catch (error) {
-    res.status(200).send({ message: "An error occured", status: "errors" });
+    res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
   }
 }
 
 exports.verifyPhoneNumber = async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.idUser });
-    if (!user) return res.status(200).send({ message: "An error occured", status: "errors" });
+    if (!user) return res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
     if (user.phoneVerified) return res.send({ message: "phone verified sucessfully", status: "success" });
 
     const token = await Token.findOne({
@@ -222,14 +180,14 @@ exports.verifyPhoneNumber = async (req, res) => {
       type: "SMS",
       token: req.params.token,
     });
-    if (!token) return res.status(200).send({ message: "An error occured", status: "errors" });
+    if (!token) return res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
 
     await User.updateOne({ _id: user._id, phoneVerified: true });
     await Token.findByIdAndRemove(token._id);
 
     res.send({ message: "phone verified sucessfully", status: "success" });
   } catch (error) {
-    res.status(200).send({ message: "An error occured", status: "errors" });
+    res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
   }
 }
 
@@ -241,7 +199,7 @@ exports.signout = async (req, res) => {
       status: "success"
     });
   } catch (err) {
-    res.status(200).send({ message: "An error occured", status: "errors" });
+    res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
   }
 };
 
@@ -249,10 +207,10 @@ exports.forgot = async (req, res, next) => {
   const token = (await promisify(crypto.randomBytes)(20)).toString('hex');
   User.findOne({ email: req.body.email }, {}, async function (err, user) {
     if (err) {
-      return res.status(200).send({ message: err, status: "errors" });
+      return res.status(200).send({ message: err, status: RES_STATUS_FAIL });
     }
     if (!user) {
-      return res.status(200).send({ message: "There is no user with this email", status: "errors" });
+      return res.status(200).send({ message: "There is no user with this email", status: RES_STATUS_FAIL });
     }
 
     user.resetPasswordToken = token;
@@ -268,7 +226,7 @@ exports.forgot = async (req, res, next) => {
 
       return res.status(200).send({ resettoken: token, status: "success" });
     } catch {
-      return res.status(200).send({ message: "There is no user with this email.", status: "errors" });
+      return res.status(200).send({ message: "There is no user with this email.", status: RES_STATUS_FAIL });
     }
   })
 }
@@ -280,12 +238,12 @@ exports.reset = async (req, res) => {
     .populate("roles", "-__v")
     .exec((err, user) => {
       if (err) {
-        res.status(200).send({ message: "Incorrect id or password", status: "errors" });
+        res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Incorrect id or password", status: "errors" });
+        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
       if (!(user.resetPasswordExpires > Date.now()) && crypto.timingSafeEqual(Buffer.from(user.resetPasswordToken), Buffer.from(req.params.token))) {
@@ -298,13 +256,13 @@ exports.reset = async (req, res) => {
 
       user.save(async (err, rUser) => {
         if (err) {
-          res.status(200).send({ message: err, status: "errors" });
+          res.status(200).send({ message: err, status: RES_STATUS_FAIL });
           return;
         }
         const message = `<p>This is a confirmation that the password for your account "${user.email}" has just been changed. </p>`
 
         await sendEmail(user.email, "Reset Password", message)
-        return res.send({ message: `Success! Your password has been changed.`, status: "errors" });
+        return res.send({ message: `Success! Your password has been changed.`, status: RES_STATUS_FAIL });
 
       });
     })
@@ -316,12 +274,12 @@ exports.changePassword = (req, res) => {
   })
     .exec((err, user) => {
       if (err) {
-        res.status(200).send({ message: err, status: "errors" });
+        res.status(200).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Incorrect id or password", status: "errors" });
+        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
       var passwordIsValid = bcrypt.compareSync(
@@ -330,7 +288,7 @@ exports.changePassword = (req, res) => {
       );
 
       if (!passwordIsValid) {
-        return res.status(200).send({ message: "Incorrect id or password", status: "errors" });
+        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
       user.password = req.body.newPassword;
@@ -338,7 +296,7 @@ exports.changePassword = (req, res) => {
 
       user.save(async (err, rUser) => {
         if (err) {
-          res.status(200).send({ message: err, status: "errors" });
+          res.status(200).send({ message: err, status: RES_STATUS_FAIL });
           return;
         }
 
@@ -356,12 +314,12 @@ exports.requestEmailVerify = (req, res) => {
   })
     .exec(async (err, user) => {
       if (err) {
-        res.status(200).send({ message: err, status: "errors" });
+        res.status(200).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Not exist user", status: "errors" });
+        return res.status(200).send({ message: "Not exist user", status: RES_STATUS_FAIL });
       }
 
       let token = await new Token({
@@ -384,12 +342,12 @@ exports.requestPhoneVerify = (req, res) => {
     .populate("roles", "-__v")
     .exec(async (err, user) => {
       if (err) {
-        res.status(200).send({ message: err, status: "errors" });
+        res.status(200).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Incorrect token", status: "errors" });
+        return res.status(200).send({ message: "Incorrect token", status: RES_STATUS_FAIL });
       }
 
       await sendSMS(user);
