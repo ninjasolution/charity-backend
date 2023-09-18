@@ -31,9 +31,6 @@ router.post("/avatar", middlewares.authJwt.verifyToken, fileController.upload, f
 router.get("/avatar/:fileName", fileController.getFile);
 router.delete("/avatar/:fileName",middlewares.authJwt.isAdmin, fileController.delete);
 
-//Transaction
-router.get("/transaction", middlewares.authJwt.verifyToken, transactionController.index)
-
 //Donation
 router.get("/donation", middlewares.authJwt.verifyToken, donationController.findAll)
 router.get("/donation/:id",middlewares.authJwt.verifyToken, donationController.findOne);

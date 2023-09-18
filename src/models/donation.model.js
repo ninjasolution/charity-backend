@@ -9,10 +9,6 @@ module.exports = (connection, autoIncrement) => {
       type: String,
     },
     totalAmount: Number,
-    paymentMethod: {
-      type: String,
-      enum: ["Stripe", "Paypal", "Crypto"]
-    },
     status: {
       type: Number,
       default: DONATION_STATUS_PENDING

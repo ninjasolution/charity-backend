@@ -12,7 +12,8 @@ exports.create = (req, res) => {
     const feedback = new Feedback({
         topic: req.body.topic,
         donation: req.body.donation,
-        user: req.userId
+        user: req.userId,
+        content: req.body.content
     });
 
     // Save Feedback in the database

@@ -1,3 +1,4 @@
+const { DONATION_STATUS_PENDING, DONATION_STATUS_APPROVED } = require("../config");
 const db = require("../models");
 const Donation = db.donation;
 const User = db.user;
@@ -12,9 +13,11 @@ exports.create = (req, res) => {
 
     // Create a Donation
     const donation = new Donation({
-        amount: req.body.amount,
+        title: req.body.title,
+        description: req.body.description,
+        totalAmount: req.body.totalAmount,
         createdBy: req.userId,
-        status: "Pending"
+        status: DONATION_STATUS_PENDING
     });
 
     // Save Donation in the database
@@ -116,7 +119,7 @@ exports.approve = (req, res) => {
     const id = req.params.id;
 
 
-    Donation.findByIdAndUpdate(id, { status: "Approved" }, { useFindAndModify: false })
+    Donation.findByIdAndUpdate(id, { status: DONATION_STATUS_APPROVED }, { useFindAndModify: false })
         .then(data => {
             if (!data) {
                 res.status(404).send({
