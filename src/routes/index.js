@@ -8,6 +8,7 @@ const fileController = require("../controllers/file.controller");
 const adminController = require("../controllers/admin.controller");
 const donationController = require("../controllers/donation.controller");
 const feedbackController = require("../controllers/feedback.controller");
+const stripeController = require("../controllers/stripe.controller");
 
 router.post("/auth/signup", [middlewares.verifySignUp.checkRolesExisted], authController.signup)
 router.post("/auth/signin", authController.signin)
@@ -38,6 +39,9 @@ router.post("/donation", middlewares.authJwt.verifyToken, donationController.cre
 router.put("/donation/:id", middlewares.authJwt.verifyToken, donationController.update)
 router.delete("/donation/:id",middlewares.authJwt.isAdmin, donationController.delete);
 router.put("/donation/approve/:id", middlewares.authJwt.isAdmin, donationController.approve);
+
+
+router.post("/create-payment-intent", stripeController.createCharge);
 
 //Feedback
 router.get("/feedback", middlewares.authJwt.verifyToken, feedbackController.findAll)

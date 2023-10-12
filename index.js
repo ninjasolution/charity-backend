@@ -30,7 +30,7 @@ app.use(cors(corsOptions));
 
 app.use('/api', indexRouter);
 app.get("/", (req, res) => {
-  return res.send("Welcome to Mr-Tradly API");
+  return res.send("Welcome to Charity API");
 });
 
 app.use(function (err, req, res, next) {
@@ -57,9 +57,6 @@ app.use(function (req, res, next) {
   next();
 });
 app.set("view engine", "ejs")
-
-
-
 
 
 
