@@ -29,7 +29,7 @@ var corsOptions = {
 app.use(cors(corsOptions));
 
 app.use('/api', indexRouter);
-app.get("/", (req, res) => {
+app.get("/check", (req, res) => {
   return res.send("Welcome to Charity API");
 });
 
