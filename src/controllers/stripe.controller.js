@@ -1,6 +1,5 @@
 const db = require("../models");
 const Donation = db.donation;
-const User = db.user;
 const config = require('../config/stripe');
 const stripe = require('stripe')(config.secretKey);
 
@@ -9,6 +8,7 @@ const stripe = require('stripe')(config.secretKey);
 
 exports.createCharge = async (req, res) => {
     try {
+        console.log(req.body.amount)
         const paymentIntent = await stripe.paymentIntents.create({
             currency: "USD",
             amount: req.body.amount,
