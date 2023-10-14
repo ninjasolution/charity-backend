@@ -1,4 +1,3 @@
-const settings = require("../config/settings");
 const db = require("../models");
 const User = db.user;
 const Role = db.role;
@@ -10,21 +9,21 @@ const crypto = require("crypto")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const service = require("../service");
 const { RES_MSG_DATA_NOT_FOUND, RES_STATUS_FAIL } = require("../config");
 
 exports.signup = async (req, res) => {
 
 
   let user = new User({
-    username: req.body.username,
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, 8),
   });
 
   user = await user.save();
 
-  Role.findOne({ name: req.body.role }, (err, role) => {
+  Role.findOne({ name: db.ROLES[0] }, (err, role) => {
     if (err) {
       return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
     }

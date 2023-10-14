@@ -28,7 +28,7 @@ module.exports = (connection, autoIncrement) => {
       type: Boolean,
       default: false
     },
-    phoneNumber: {
+    phone: {
       type: String,
       default: ""
     },
