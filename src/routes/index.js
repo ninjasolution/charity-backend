@@ -48,6 +48,8 @@ router.post("/feedback", middlewares.authJwt.verifyToken, feedbackController.cre
 //Payment
 router.post("/payment/stripe", middlewares.authJwt.verifyToken, paymentController.payWithStripe);
 router.post("/payment/paypal", middlewares.authJwt.verifyToken, paymentController.payWithPaypal);
+router.post("/payment/crypto", paymentController.payWithCrypto);
+router.get("/payment/chains", paymentController.getChains);
 
 router.get("/admin/db/drop", [middlewares.authJwt.verifyToken, middlewares.authJwt.isAdmin], adminController.drop)
 

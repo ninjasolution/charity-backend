@@ -6,16 +6,7 @@ const stripe = require('stripe')(config.secretKey);
 const ethers = require('ethers');
 const erc20Abi = require("../abis/ERC20.json")
 const chains = require("../config/chains")
-
-// Initialize a provider (e.g., Infura)
-const provider = new ethers.providers.JsonRpcProvider("YOUR_INFURA_URL");
-
-// ERC-20 token contract address
-const tokenContractAddress = "YOUR_ERC20_TOKEN_ADDRESS";
-
-// Transaction hash to analyze
-const transactionHash = "YOUR_TRANSACTION_HASH";
-
+const fetch = require('node-fetch');
 
 paypal.configure({
   'mode': 'sandbox', //sandbox or live
@@ -114,48 +105,71 @@ exports.confirmPaypalPayment = async (req, res) => {
   });
 };
 
-exports.getCryptoInfo = (req, res) => {
-  return res.send({chains: chains})
+exports.getChains = (req, res) => {
+  return res.send({ chains: chains })
 }
 
 exports.payWithCrypto = async (req, res) => {
   try {
 
-    const { chain } = req.body
+    const { chain, coin, hash } = req.body;
+    console.log(req.body)
+
+    const chainDetails = chains.find(item => item.id == chain);
+    const coinDetails = chainDetails.coins.find(item => item.symbol == "USDT")
+    // Initialize a provider (e.g., Infura)
+    const provider = new ethers.JsonRpcProvider(chainDetails.rpc);
+
+    // ERC-20 token contract address
+    const tokenContractAddress = coinDetails.address;
 
     switch (chain) {
-      case "Ethereum":
+      case "0":
+      case "1":
         try {
           // Get the transaction receipt
-          const txReceipt = await provider.getTransactionReceipt(transactionHash);
+          const txReceipt = await provider.getTransactionReceipt(hash);
 
           // Check if the transaction was successful
           if (txReceipt.status === 1) {
-            const contract = new ethers.Contract(tokenContractAddress, erc20Abi, provider);
 
             // Get the transaction details
-            const tx = await provider.getTransaction(transactionHash);
+            const tx = await provider.getTransaction(hash);
+            if (tokenContractAddress == "") {
+              // Check if the transaction is for Ether transfer
+              if (tx.value) {
+                const amountInWei = tx.value;
+                const amountInEther = ethers.formatEther(amountInWei);
+                const fromAddress = tx.from;
+                const toAddress = tx.to;
 
-            // Get the "from" address
-            const fromAddress = tx.from;
-
-            // Parse the input data to get the "to" address and amount
-            const data = ethers.utils.defaultAbiCoder.decode(["address", "uint256"], tx.data);
-            const toAddress = data[0];
-            const amount = data[1];
-
-            // Check the "to" address to verify it's the ERC-20 contract
-            if (toAddress === tokenContractAddress) {
-              // Check if the transaction is a token transfer
-              if (tx.to === tokenContractAddress) {
-                const sender = fromAddress;
-                const recipient = toAddress;
-                console.log(`Token transfer from ${sender} to ${recipient}: ${amount} tokens`);
+                console.log(`ETH transfer from ${fromAddress} to ${toAddress}: ${amountInEther} ETH`);
               } else {
-                console.log("This transaction is not a token transfer.");
+                console.log("This transaction does not involve an Ether transfer.");
+              }
+            } else if (tx.to === tokenContractAddress) {
+              // Get the "from" and "to" addresses and the amount from the logs
+              const contract = new ethers.Contract(tokenContractAddress, erc20Abi.abi, provider);
+              const filter = contract.filters.Transfer(null, null, null);
+              const logs = await provider.getLogs({
+                fromBlock: tx.blockNumber,
+                toBlock: tx.blockNumber,
+                address: tokenContractAddress,
+                topics: filter.topics,
+              });
+
+              if (logs.length > 0) {
+                const parsedLog = contract.interface.parseLog(logs[0]);
+                const fromAddress = parsedLog.args[0];
+                const toAddress = parsedLog.args[1];
+                const amount = parsedLog.args[2];
+
+                console.log(`Token transfer from ${fromAddress} to ${toAddress}: ${amount.toString()} tokens`);
+              } else {
+                console.log("No Transfer event logs found for this transaction.");
               }
             } else {
-              console.log("The transaction is not related to the ERC-20 contract.");
+              console.log("This transaction is not related to the ERC-20 contract.");
             }
           } else {
             console.log("The transaction failed.");
@@ -164,7 +178,32 @@ exports.payWithCrypto = async (req, res) => {
           console.error("Error analyzing transaction:", error);
         }
         break;
+      case "2":
+        const transactionHash = 'YOUR_BITCOIN_TRANSACTION_HASH';
 
+        // Define the Blockstream API endpoint
+        const blockstreamApiUrl = `https://blockstream.info/api/tx/${transactionHash}`;
+        try {
+          const response = await fetch(blockstreamApiUrl);
+          if (response.ok) {
+            const data = await response.json();
+            const vin = data.vin[0]; // Assuming a single input for simplicity
+            const vout = data.vout[0]; // Assuming a single output for simplicity
+
+            const from = vin.prevout.scriptpubkey_address;
+            const to = vout.scriptpubkey_address;
+            const amount = vout.value;
+
+            console.log(`Sender (from): ${from}`);
+            console.log(`Recipient (to): ${to}`);
+            console.log(`Amount (BTC): ${amount / 100000000}`); // Convert from satoshis to BTC
+          } else {
+            console.error('Failed to fetch transaction details:', response.status, response.statusText);
+          }
+        } catch (error) {
+          console.error('Error fetching transaction details:', error);
+        }
+        break;
       default:
         break;
     }
@@ -172,7 +211,8 @@ exports.payWithCrypto = async (req, res) => {
     return res.send({ status: 200, message: "success" })
 
 
-  } catch (e) {
+  } catch (err) {
+    console.log(err)
     return res.status(400).send({
       error: {
         message: e.message,
