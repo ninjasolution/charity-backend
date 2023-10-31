@@ -41,7 +41,7 @@ router.delete("/donation/:id",middlewares.authJwt.isAdmin, donationController.de
 router.put("/donation/approve/:id", middlewares.authJwt.isAdmin, donationController.approve);
 
 
-router.post("/create-payment-intent", stripeController.createCharge);
+router.post("/pay/stripe", stripeController.createCharge);
 
 //Feedback
 router.get("/feedback", middlewares.authJwt.verifyToken, feedbackController.findAll)

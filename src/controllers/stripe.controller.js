@@ -3,22 +3,24 @@ const Donation = db.donation;
 const config = require('../config/stripe');
 const stripe = require('stripe')(config.secretKey);
 
-
-
-
 exports.createCharge = async (req, res) => {
     try {
         console.log(req.body.amount)
-        const paymentIntent = await stripe.paymentIntents.create({
-            currency: "USD",
+        stripe.charges.create({
             amount: req.body.amount,
-            automatic_payment_methods: { enabled: true },
-        });
+            currency: "USD",
+            source: req.body.token.id,
+            description: `Donation`,
+            metadata: {
+                productId: 1
+            }
+        }, (err, charge) => {
+            console.log(err)
+            if(err)  res.status(400).send({status: 400, message: "fail"})
+            else res.send({status: 200, message: "success"})
+          });
 
-        // Send publishable key and PaymentIntent details to client
-        return res.send({
-            clientSecret: paymentIntent.client_secret,
-        });
+        
     } catch (e) {
         return res.status(400).send({
             error: {

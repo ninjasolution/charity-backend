@@ -47,8 +47,7 @@ exports.signup = async (req, res) => {
 exports.signin = (req, res) => {
   User.findOne({
     email: req.body.email
-  })
-    .populate("role", "-__v")
+  }).populate("role", "-__v")
     .exec((err, user) => {
       if (err) {
         res.status(200).send({ message: err, status: RES_STATUS_FAIL });
