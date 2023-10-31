@@ -41,8 +41,6 @@ router.delete("/donation/:id",middlewares.authJwt.isAdmin, donationController.de
 router.put("/donation/approve/:id", middlewares.authJwt.isAdmin, donationController.approve);
 
 
-router.post("/pay/stripe", stripeController.createCharge);
-
 //Feedback
 router.get("/feedback", middlewares.authJwt.verifyToken, feedbackController.findAll)
 router.post("/feedback", middlewares.authJwt.verifyToken, feedbackController.create)
@@ -50,7 +48,6 @@ router.post("/feedback", middlewares.authJwt.verifyToken, feedbackController.cre
 //Payment
 router.post("/payment/stripe", middlewares.authJwt.verifyToken, paymentController.payWithStripe);
 router.post("/payment/paypal", middlewares.authJwt.verifyToken, paymentController.payWithPaypal);
-router.post("/payment/cofirm/stripe", middlewares.authJwt.verifyToken, paymentController.confirmPaypalPayment);
 
 router.get("/admin/db/drop", [middlewares.authJwt.verifyToken, middlewares.authJwt.isAdmin], adminController.drop)
 
