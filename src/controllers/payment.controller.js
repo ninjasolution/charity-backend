@@ -6,7 +6,6 @@ const stripe = require('stripe')(config.secretKey);
 const ethers = require('ethers');
 const erc20Abi = require("../abis/ERC20.json")
 const chains = require("../config/chains")
-const fetch = require('node-fetch');
 
 paypal.configure({
   'mode': 'sandbox', //sandbox or live
