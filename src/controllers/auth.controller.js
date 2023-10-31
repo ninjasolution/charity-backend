@@ -12,8 +12,6 @@ const bcrypt = require("bcryptjs");
 const { RES_MSG_DATA_NOT_FOUND, RES_STATUS_FAIL } = require("../config");
 
 exports.signup = async (req, res) => {
-
-
   let user = new User({
     firstName: req.body.firstName,
     lastName: req.body.lastName,
@@ -21,30 +19,36 @@ exports.signup = async (req, res) => {
     password: bcrypt.hashSync(req.body.password, 8),
   });
 
-  user = await user.save();
+  try {
 
-  Role.findOne({ name: db.ROLES[0] }, (err, role) => {
-    if (err) {
-      return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
-    }
+    user = await user.save();
 
-    if (!role) {
-      return res.status(404).send({ message: RES_MSG_DATA_NOT_FOUND, status: RES_STATUS_FAIL });
-    }
-
-    user.role = role._id;
-    user.save(async (err, user) => {
+    Role.findOne({ name: db.ROLES[0] }, (err, role) => {
       if (err) {
         return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
       }
-      return res.send(user);
-    });
+
+      if (!role) {
+        return res.status(404).send({ message: RES_MSG_DATA_NOT_FOUND, status: RES_STATUS_FAIL });
+      }
+
+      user.role = role._id;
+      user.save(async (err, user) => {
+        if (err) {
+          return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
+        }
+        return res.send(user);
+      });
+    }
+    );
+  } catch (err) {
+    return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
   }
-  );
 
 };
 
 exports.signin = (req, res) => {
+  console.log(req.body)
   User.findOne({
     email: req.body.email
   }).populate("role", "-__v")

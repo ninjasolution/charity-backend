@@ -10,7 +10,7 @@ const donationController = require("../controllers/donation.controller");
 const feedbackController = require("../controllers/feedback.controller");
 const stripeController = require("../controllers/stripe.controller");
 
-router.post("/auth/signup", [middlewares.verifySignUp.checkRolesExisted], authController.signup)
+router.post("/auth/signup", authController.signup)
 router.post("/auth/signin", authController.signin)
 router.post("/auth/signout", authController.signout)
 router.get("/auth/verifyEmail/:id/:token", authController.verifyEmail)
