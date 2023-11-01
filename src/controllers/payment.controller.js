@@ -6,6 +6,7 @@ const stripe = require('stripe')(config.secretKey);
 const ethers = require('ethers');
 const erc20Abi = require("../abis/ERC20.json")
 const chains = require("../config/chains")
+const axios = require("axios").default
 
 paypal.configure({
   'mode': 'sandbox', //sandbox or live
@@ -15,7 +16,6 @@ paypal.configure({
 
 exports.payWithStripe = async (req, res) => {
   const { token, amount, description, currency, user, address } = req.body;
-  console.log(req.body)
   try {
     stripe.charges.create({
       amount,
@@ -36,17 +36,19 @@ exports.payWithStripe = async (req, res) => {
           amount,
           currency,
           description,
-          method: "Stripe" 
+          transactionId: token.id,
+          method: "Stripe"
         })
         try {
           await payment.save();
           return res.send({ status: 200, message: "success" })
-        }catch (err) {
+        } catch (err) {
           return res.status(500).send({ status: 200, message: err })
         }
       }
     });
   } catch (e) {
+    console.log(e.message)
     return res.status(400).send({
       error: {
         message: e.message,
@@ -186,30 +188,46 @@ exports.payWithCrypto = async (req, res) => {
                 const fromAddress = parsedLog.args[0];
                 const toAddress = parsedLog.args[1];
                 const amount = parsedLog.args[2];
+                const payment = new Payment({
+                  address,
+                  user,
+                  amount: ethers.formatEther(amount),
+                  chain: chainDetails.id,
+                  coin: coinDetails.symbol,
+                  transactionId: hash,
+                  method: "Crypto"
+                })
+                try {
+                  await payment.save();
+                  return res.send({ status: 200, message: "success" })
+                } catch (err) {
+                  return res.status(500).send({ status: 200, message: err })
+                }
 
-                console.log(`Token transfer from ${fromAddress} to ${toAddress}: ${amount.toString()} tokens`);
               } else {
-                console.log("No Transfer event logs found for this transaction.");
+                console.log("No Transfer event logs found for this transaction.")
+                return res.status(400).send({ status: 200, message: "No Transfer event logs found for this transaction." })
               }
             } else {
-              console.log("This transaction is not related to the ERC-20 contract.");
+              console.log("This transaction is not related to the ERC-20 contract.")
+              return res.status(400).send({ status: 200, message: "This transaction is not related to the ERC-20 contract." })
             }
           } else {
-            console.log("The transaction failed.");
+            console.log("The transaction failed.")
+            return res.status(400).send({ status: 200, message: "The transaction failed." })
           }
         } catch (error) {
-          console.error("Error analyzing transaction:", error);
+          console.log("Error analyzing transaction:", error)
+          return res.status(400).send({ status: 200, message: "Error analyzing transaction:" })
         }
         break;
       case "2":
-        const transactionHash = 'YOUR_BITCOIN_TRANSACTION_HASH';
-
         // Define the Blockstream API endpoint
-        const blockstreamApiUrl = `https://blockstream.info/api/tx/${transactionHash}`;
+        const blockstreamApiUrl = `https://blockstream.info/api/tx/${hash}`;
         try {
-          const response = await fetch(blockstreamApiUrl);
-          if (response.ok) {
-            const data = await response.json();
+          const response = await axios.get(blockstreamApiUrl);
+          if (response.status == 200) {
+            const data = await response.data;
             const vin = data.vin[0]; // Assuming a single input for simplicity
             const vout = data.vout[0]; // Assuming a single output for simplicity
 

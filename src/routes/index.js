@@ -11,7 +11,7 @@ const feedbackController = require("../controllers/feedback.controller");
 
 router.post("/auth/signup", authController.signup)
 router.post("/auth/signin", authController.signin)
-router.post("/auth/signout", authController.signout)
+router.get("/auth/signout", authController.signout)
 router.get("/auth/verifyEmail/:id/:token", authController.verifyEmail)
 router.get("/auth/verifyPhoneNumber/:id/:token", authController.verifyPhoneNumber)
 router.post("/auth/forgot", authController.forgot)

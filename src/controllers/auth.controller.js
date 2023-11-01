@@ -78,6 +78,7 @@ exports.signin = (req, res) => {
       res.status(200).send({
         status: "success",
         token,
+        expiresIn: 24*3600*1000,
         data: {
           _id: user._id,
           username: user.username,
