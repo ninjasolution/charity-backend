@@ -8,7 +8,6 @@ const fileController = require("../controllers/file.controller");
 const adminController = require("../controllers/admin.controller");
 const donationController = require("../controllers/donation.controller");
 const feedbackController = require("../controllers/feedback.controller");
-const stripeController = require("../controllers/stripe.controller");
 
 router.post("/auth/signup", authController.signup)
 router.post("/auth/signin", authController.signin)
@@ -40,14 +39,13 @@ router.put("/donation/:id", middlewares.authJwt.verifyToken, donationController.
 router.delete("/donation/:id",middlewares.authJwt.isAdmin, donationController.delete);
 router.put("/donation/approve/:id", middlewares.authJwt.isAdmin, donationController.approve);
 
-
 //Feedback
 router.get("/feedback", middlewares.authJwt.verifyToken, feedbackController.findAll)
 router.post("/feedback", middlewares.authJwt.verifyToken, feedbackController.create)
 
 //Payment
-router.post("/payment/stripe", middlewares.authJwt.verifyToken, paymentController.payWithStripe);
-router.post("/payment/paypal", middlewares.authJwt.verifyToken, paymentController.payWithPaypal);
+router.post("/payment/stripe", paymentController.payWithStripe);
+router.post("/payment/paypal", paymentController.payWithPaypal);
 router.post("/payment/crypto", paymentController.payWithCrypto);
 router.get("/payment/chains", paymentController.getChains);
 

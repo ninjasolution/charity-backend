@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 module.exports = (connection, autoIncrement) => {
 
   const PaymentSchema = new mongoose.Schema({
-    address: String,
+    address: Object,
     user: {
       type: Number,
       ref: "User"
@@ -16,9 +16,12 @@ module.exports = (connection, autoIncrement) => {
       type: Number,
       ref: "Organization"
     },
+    description: String,
     transactionId: String,
     amount: Number,
     currency: String,
+    chain: Number,
+    coin: String,
     status: String,
     method: String
 

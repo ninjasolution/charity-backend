@@ -14,19 +14,37 @@ paypal.configure({
 });
 
 exports.payWithStripe = async (req, res) => {
+  const { token, amount, description, currency, user, address } = req.body;
+  console.log(req.body)
   try {
     stripe.charges.create({
-      amount: req.body.amount,
-      currency: "USD",
-      source: req.body.token.id,
-      description: `Donation`,
+      amount,
+      currency,
+      source: token.id,
+      description,
       metadata: {
         productId: 1
       }
-    }, (err, charge) => {
+    }, async (err, charge) => {
       console.log(err)
-      if (err) res.status(400).send({ status: 400, message: "fail" })
-      else res.send({ status: 200, message: "success" })
+      if (err) return res.status(400).send({ status: 400, message: "fail" })
+      else {
+
+        const payment = new Payment({
+          address,
+          user,
+          amount,
+          currency,
+          description,
+          method: "Stripe" 
+        })
+        try {
+          await payment.save();
+          return res.send({ status: 200, message: "success" })
+        }catch (err) {
+          return res.status(500).send({ status: 200, message: err })
+        }
+      }
     });
   } catch (e) {
     return res.status(400).send({
@@ -111,11 +129,17 @@ exports.getChains = (req, res) => {
 exports.payWithCrypto = async (req, res) => {
   try {
 
-    const { chain, coin, hash } = req.body;
+    const { chain, coin, hash, user, address } = req.body;
     console.log(req.body)
 
     const chainDetails = chains.find(item => item.id == chain);
+    if (!chainDetails?.coins) {
+      return res.status(400).send({ message: "Invalid request" })
+    }
     const coinDetails = chainDetails.coins.find(item => item.symbol == "USDT")
+    if (!coinDetails?.symbol) {
+      return res.status(400).send({ message: "Invalid request" })
+    }
     // Initialize a provider (e.g., Infura)
     const provider = new ethers.JsonRpcProvider(chainDetails.rpc);
 
@@ -208,8 +232,6 @@ exports.payWithCrypto = async (req, res) => {
     }
 
     return res.send({ status: 200, message: "success" })
-
-
   } catch (err) {
     console.log(err)
     return res.status(400).send({
