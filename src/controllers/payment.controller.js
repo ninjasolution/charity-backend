@@ -131,7 +131,7 @@ exports.getChains = (req, res) => {
 exports.payWithCrypto = async (req, res) => {
   try {
 
-    const { chain, coin, hash, user, address } = req.body;
+    const { chain, coin, hash, user, address, donation, wishSignup } = req.body;
     const chainDetails = chains.find(item => item.id == chain);
     if (!chainDetails?.coins) {
       return res.status(400).send({ message: "Invalid request" })
@@ -167,6 +167,7 @@ exports.payWithCrypto = async (req, res) => {
                 const payment = new Payment({
                   address,
                   user,
+                  donation,
                   amount: amountInEther,
                   chain: chainDetails.id,
                   coin: coinDetails.symbol,
@@ -205,6 +206,7 @@ exports.payWithCrypto = async (req, res) => {
                   amount: ethers.formatEther(amount),
                   chain: chainDetails.id,
                   coin: coinDetails.symbol,
+                  donation,
                   transactionId: hash,
                   method: "Crypto"
                 })
