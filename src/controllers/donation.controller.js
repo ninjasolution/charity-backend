@@ -2,6 +2,7 @@ const { DONATION_STATUS_PENDING, DONATION_STATUS_APPROVED } = require("../config
 const db = require("../models");
 const Donation = db.donation;
 const User = db.user;
+const countries = require("../config/static.source").countries
 
 // Create a new Donation
 exports.create = (req, res) => {
@@ -49,6 +50,10 @@ exports.findAll = (req, res) => {
                 message: err.message || "Some error occurred while retrieving donations."
             });
         });
+};
+
+exports.findAllCountries = (req, res) => {
+    return res.send(countries);
 };
 
 // Find a single Donation with an id

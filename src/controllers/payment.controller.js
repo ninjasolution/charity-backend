@@ -132,13 +132,11 @@ exports.payWithCrypto = async (req, res) => {
   try {
 
     const { chain, coin, hash, user, address } = req.body;
-    console.log(req.body)
-
     const chainDetails = chains.find(item => item.id == chain);
     if (!chainDetails?.coins) {
       return res.status(400).send({ message: "Invalid request" })
     }
-    const coinDetails = chainDetails.coins.find(item => item.symbol == "USDT")
+    const coinDetails = chainDetails.coins.find(item => item.symbol == coin)
     if (!coinDetails?.symbol) {
       return res.status(400).send({ message: "Invalid request" })
     }
@@ -157,20 +155,33 @@ exports.payWithCrypto = async (req, res) => {
 
           // Check if the transaction was successful
           if (txReceipt.status === 1) {
-
             // Get the transaction details
             const tx = await provider.getTransaction(hash);
             if (tokenContractAddress == "") {
-              // Check if the transaction is for Ether transfer
+            // Check if the transaction is for Ether transfer
               if (tx.value) {
                 const amountInWei = tx.value;
                 const amountInEther = ethers.formatEther(amountInWei);
                 const fromAddress = tx.from;
                 const toAddress = tx.to;
+                const payment = new Payment({
+                  address,
+                  user,
+                  amount: amountInEther,
+                  chain: chainDetails.id,
+                  coin: coinDetails.symbol,
+                  transactionId: hash,
+                  method: "Crypto"
+                })
+                try {
+                  await payment.save();
+                  return res.send({ status: 200, message: "success" })
+                } catch (err) {
+                  return res.status(500).send({ status: 200, message: err })
+                }
 
-                console.log(`ETH transfer from ${fromAddress} to ${toAddress}: ${amountInEther} ETH`);
               } else {
-                console.log("This transaction does not involve an Ether transfer.");
+                return res.status(400).send("This transaction does not involve an Ether transfer.");
               }
             } else if (tx.to === tokenContractAddress) {
               // Get the "from" and "to" addresses and the amount from the logs

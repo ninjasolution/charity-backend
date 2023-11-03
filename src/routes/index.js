@@ -32,7 +32,8 @@ router.get("/avatar/:fileName", fileController.getFile);
 router.delete("/avatar/:fileName",middlewares.authJwt.isAdmin, fileController.delete);
 
 //Donation
-router.get("/donation", middlewares.authJwt.verifyToken, donationController.findAll)
+router.get("/donation", donationController.findAll)
+router.get("/countries", donationController.findAllCountries)
 router.get("/donation/:id",middlewares.authJwt.verifyToken, donationController.findOne);
 router.post("/donation", middlewares.authJwt.verifyToken, donationController.create)
 router.put("/donation/:id", middlewares.authJwt.verifyToken, donationController.update)

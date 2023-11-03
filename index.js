@@ -58,11 +58,12 @@ app.use(function (req, res, next) {
 });
 app.set("view engine", "ejs")
 
-
+const source = require("./src/config/static.source")
 
 const db = require("./src/models");
 const Role = db.role;
 const User = db.user;
+const Donation = db.donation;
 db.connection.on("open", () => {
   console.log("Successfully connect to MongoDB.");
   initial();
@@ -105,6 +106,22 @@ function initial() {
         })
     }
   });
+
+  Donation.estimatedDocumentCount(async (err, count) => {
+    if (!err && count === 0) {
+
+      for (let i = 0; i < source.donations.length; i++) {
+        try {
+          let donation = new Donation({
+            title: source.donations[i].name
+          })
+          await donation.save();
+        } catch (err) {
+          console.log(err)
+        }
+      }
+    }
+  })
 }
 
 const PORT = process.env.PORT || 3000;
