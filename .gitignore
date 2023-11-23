@@ -1,10 +1,11 @@
+.env
 # dependencies
 /node_modules
 
 # production
 /build
 
-# .env
+
 .git-2
 .env.local
 .env.development.local
