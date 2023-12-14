@@ -4,10 +4,10 @@ const Role = db.role;
 const Token = db.token;
 const twilio = require('twilio');
 const promisify = require('util.promisify');
-const nodemailer = require("nodemailer");
 const crypto = require("crypto")
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const service = require("../service/index")
 
 const { RES_MSG_DATA_NOT_FOUND, RES_STATUS_FAIL } = require("../config");
 
@@ -200,61 +200,60 @@ exports.forgot = async (req, res, next) => {
   const token = (await promisify(crypto.randomBytes)(20)).toString('hex');
   User.findOne({ email: req.body.email }, {}, async function (err, user) {
     if (err) {
-      return res.status(200).send({ message: err, status: RES_STATUS_FAIL });
+      return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
     }
     if (!user) {
-      return res.status(200).send({ message: "There is no user with this email", status: RES_STATUS_FAIL });
+      return res.status(404).send({ message: "There is no user with this email", status: RES_STATUS_FAIL });
     }
 
     user.resetPasswordToken = token;
     user.resetPasswordExpires = Date.now() + 3600000;
 
-    const message = `<p>You are receiving this because you (or someone else) have requested the reset of the password for your account.
-        Please click on the following link, or paste this into your browser to complete the process:
-        <a href="http://${req.headers.host}/reset/${token}" target="_blank">link</a>
-        If you did not request this, please ignore this email and your password will remain unchanged.</p>`
+    user.save((err) => {
+      if (!err) {
+        service.resetPassword({ email: req.body.email, code: token }).then((result) => {
+          return {
+            message: "success",
+          };
+        });
+      } else {
+        return res.status(500).send({ message: err, status: RES_STATUS_FAIL });
 
-    try {
-      await sendEmail(user.email, "Reset Password", message)
-
-      return res.status(200).send({ resettoken: token, status: "success" });
-    } catch {
-      return res.status(200).send({ message: "There is no user with this email.", status: RES_STATUS_FAIL });
-    }
+      }
+    })
   })
 }
 
 exports.reset = async (req, res) => {
+
   User.findOne({
-    _id: req.userId
+    resetPasswordToken: req.params.token
   })
-    .populate("role", "-__v")
-    .exec((err, user) => {
+    .exec(async (err, user) => {
       if (err) {
-        res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
+        res.status(500).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
+        return res.status(404).send({ message: "Incorrect token", status: RES_STATUS_FAIL });
       }
 
-      if (!(user.resetPasswordExpires > Date.now()) && crypto.timingSafeEqual(Buffer.from(user.resetPasswordToken), Buffer.from(req.params.token))) {
-        return res.status(200).send({ message: "Password reset token is invalid or has expired." });
+      if (!(user.resetPasswordExpires > Date.now())) {
+        return res.status(400).send({ message: "Password reset token is invalid or has expired." });
       }
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
 
-      user.password = req.body.password;
+      user.password = hashedPassword;
       user.resetPasswordToken = null;
       user.resetPasswordExpires = 0;
 
       user.save(async (err, rUser) => {
         if (err) {
-          res.status(200).send({ message: err, status: RES_STATUS_FAIL });
+          res.status(500).send({ message: err, status: RES_STATUS_FAIL });
           return;
         }
-        const message = `<p>This is a confirmation that the password for your account "${user.email}" has just been changed. </p>`
-
-        await sendEmail(user.email, "Reset Password", message)
         return res.send({ message: `Success! Your password has been changed.`, status: RES_STATUS_FAIL });
 
       });
@@ -265,14 +264,14 @@ exports.changePassword = (req, res) => {
   User.findOne({
     _id: req.userId
   })
-    .exec((err, user) => {
+    .exec(async (err, user) => {
       if (err) {
-        res.status(200).send({ message: err, status: RES_STATUS_FAIL });
+        res.status(500).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
+        return res.status(404).send({ message: "Incorrect id", status: RES_STATUS_FAIL });
       }
 
       var passwordIsValid = bcrypt.compareSync(
@@ -281,20 +280,23 @@ exports.changePassword = (req, res) => {
       );
 
       if (!passwordIsValid) {
-        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
+        return res.status(400).send({ message: "password", status: RES_STATUS_FAIL });
       }
 
-      user.password = req.body.newPassword;
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(req.body.newPassword, saltRounds);
+
+      user.password = hashedPassword
       user.changePasswordAt = Date.now();
 
-      user.save(async (err, rUser) => {
+      user.save(async (err) => {
         if (err) {
-          res.status(200).send({ message: err, status: RES_STATUS_FAIL });
+          res.status(500).send({ message: err, status: RES_STATUS_FAIL });
           return;
         }
 
         return res.status(200).send({
-          status: "success",
+          status: RES_MSG_SUCESS,
           data: "Password is reseted!"
         });
       })
@@ -307,12 +309,12 @@ exports.requestEmailVerify = (req, res) => {
   })
     .exec(async (err, user) => {
       if (err) {
-        res.status(200).send({ message: err, status: RES_STATUS_FAIL });
+        res.status(500).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Not exist user", status: RES_STATUS_FAIL });
+        return res.status(404).send({ message: "Not exist user", status: RES_STATUS_FAIL });
       }
 
       let token = await new Token({
@@ -321,12 +323,15 @@ exports.requestEmailVerify = (req, res) => {
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
 
-      const message = `<p>You requested for email verification, kindly use this <a href="${process.env.BASE_URL}/#/auth/verify/${user._id}/${token.token}" target="_blank">link</a> to verify your email address</p>`
-      await sendEmail(user.email, "Verify Email", message);
+      service.verifyAccount({email: user.email, token: token.token}).then(res => {
+        return res.status(200).send({ message: "Sucess", status: RES_MSG_SUCESS });
+      }).catch(err => {
+        return res.status(500).send({ message: "Email send Fail", status: RES_MSG_SUCESS });
+      })
 
-      return res.status(200).send({ message: "Sucess", status: "success" });
     })
 }
+
 
 exports.requestPhoneVerify = (req, res) => {
   User.findOne({
@@ -348,30 +353,6 @@ exports.requestPhoneVerify = (req, res) => {
     })
 }
 
-const sendEmail = async (email, subject, html) => {
-
-  try {
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.HOST,
-      auth: {
-        user: process.env.USER,
-        pass: process.env.PASS
-      },
-      port: 465
-    })
-
-    await transporter.sendMail({
-      from: process.env.USER,
-      to: email,
-      subject: subject,
-      html: html
-    })
-  } catch {
-    return console.log("SMTP server error");
-  }
-
-}
 
 const sendSMS = async (user) => {
   try {
