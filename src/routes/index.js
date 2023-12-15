@@ -17,7 +17,7 @@ router.get("/auth/verifyPhoneNumber/:id/:token", authController.verifyPhoneNumbe
 router.post("/auth/forgot", authController.forgot)
 router.get("/auth/requestEmailVerify", middlewares.authJwt.verifyToken, authController.requestEmailVerify)
 router.get("/auth/requestPhoneVerify", middlewares.authJwt.verifyToken, authController.requestPhoneVerify)
-router.get("/auth/reset/:token", authController.reset)
+router.post("/auth/reset/:token", authController.reset)
 router.put("/auth/reset", authController.changePassword)
 
 router.get("/user", middlewares.authJwt.verifyToken, userController.allUsers);

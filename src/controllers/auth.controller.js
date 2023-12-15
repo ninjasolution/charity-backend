@@ -48,18 +48,17 @@ exports.signup = async (req, res) => {
 };
 
 exports.signin = (req, res) => {
-  console.log(req.body)
   User.findOne({
     email: req.body.email
   }).populate("role", "-__v")
     .exec((err, user) => {
       if (err) {
-        res.status(200).send({ message: err, status: RES_STATUS_FAIL });
+        res.status(500).send({ message: err, status: RES_STATUS_FAIL });
         return;
       }
 
       if (!user) {
-        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
+        return res.status(404).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
       var passwordIsValid = bcrypt.compareSync(
@@ -68,7 +67,7 @@ exports.signin = (req, res) => {
       );
 
       if (!passwordIsValid) {
-        return res.status(200).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
+        return res.status(401).send({ message: "Incorrect id or password", status: RES_STATUS_FAIL });
       }
 
       var token = jwt.sign({ id: user._id }, process.env.SESSION_SECRET, {
@@ -101,7 +100,7 @@ exports.verifyEmail = async (req, res) => {
     })
       .populate("tokens", "-__v")
       .exec(async (err, user) => {
-        if (!user) return res.status(200).send({ message: "Not exist user", status: RES_STATUS_FAIL });
+        if (!user) return res.status(404).send({ message: "Not exist user", status: RES_STATUS_FAIL });
         if (user.emailVerified) {
           var token = jwt.sign({ id: user._id }, process.env.SESSION_SECRET, {
             expiresIn: 86400 // 24 hours
@@ -127,9 +126,9 @@ exports.verifyEmail = async (req, res) => {
           user: req.params.id,
           type: "Email",
         });
-        if (tokens.length === 0) return res.status(200).send({ message: "Token doesn't exist", status: RES_STATUS_FAIL });
+        if (tokens.length === 0) return res.status(404).send({ message: "Token doesn't exist", status: RES_STATUS_FAIL });
         if (!tokens.map(t => t.token).includes(req.params.token)) {
-          return res.status(200).send({ message: "Incorrect token", status: RES_STATUS_FAIL });
+          return res.status(401).send({ message: "Incorrect token", status: RES_STATUS_FAIL });
         }
 
         await User.updateOne({ _id: user._id }, { emailVerified: true });
@@ -165,7 +164,7 @@ exports.verifyEmail = async (req, res) => {
 exports.verifyPhoneNumber = async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.userId });
-    if (!user) return res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
+    if (!user) return res.status(404).send({ message: "An error occured", status: RES_STATUS_FAIL });
     if (user.phoneVerified) return res.send({ message: "phone verified sucessfully", status: "success" });
 
     const token = await Token.findOne({
@@ -173,14 +172,14 @@ exports.verifyPhoneNumber = async (req, res) => {
       type: "SMS",
       token: req.params.token,
     });
-    if (!token) return res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
+    if (!token) return res.status(404).send({ message: "An error occured", status: RES_STATUS_FAIL });
 
     await User.updateOne({ _id: user._id, phoneVerified: true });
     await Token.findByIdAndRemove(token._id);
 
     res.send({ message: "phone verified sucessfully", status: "success" });
   } catch (error) {
-    res.status(200).send({ message: "An error occured", status: RES_STATUS_FAIL });
+    res.status(500).send({ message: "An error occured", status: RES_STATUS_FAIL });
   }
 }
 
