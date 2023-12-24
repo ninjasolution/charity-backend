@@ -81,6 +81,8 @@ exports.signin = (req, res) => {
         data: {
           _id: user._id,
           username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
           emailVerified: user.emailVerified,
           phoneVerified: user.phoneVerified,
