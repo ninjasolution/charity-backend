@@ -3,14 +3,14 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
+var path = require('path');
 const bodyParser = require("body-parser");
 
 require('dotenv').config();
 
-const indexRouter = require('./src/routes');
 const app = express();
 
-app.use(express.static(__dirname + 'public')); //Serves resources from public folder
+app.use(express.static(path.join(__dirname, 'public'))); //Serves resources from public folder
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
@@ -21,24 +21,21 @@ app.use(session({
 }))
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.set("view engine", "ejs")
 
 var corsOptions = {
   origin: process.env.CORS_ORIGIN || "https://fintecapital.io"
 };
 
-app.use(cors(corsOptions));
+app.use(cors());
 
+const indexRouter = require('./src/routes');
 app.use('/api', indexRouter);
 app.get("/check", (req, res) => {
   return res.send("Welcome to Charity API");
 });
 
-app.use(function (err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-  res.status(err.status || 500);
-  res.render('error');
-});
+
 app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -56,7 +53,6 @@ app.use(function (req, res, next) {
   // Pass to next layer of middleware
   next();
 });
-app.set("view engine", "ejs")
 
 const source = require("./src/config/static.source")
 
@@ -124,7 +120,7 @@ function initial() {
   })
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
